@@ -374,4 +374,22 @@ public class InventoryItems {
         );
         return itemStack;
     }
+
+    public ItemStack select() {
+        ItemStack itemStack = new ItemStack(Material.TORCH);
+        Utilities.setMeta(itemStack, DisplayEntityEditor.messageManager.getString("select_entity_name"),
+                DisplayEntityEditor.messageManager.getList("select_entity_lore"),
+                "InventorySelect"
+        );
+        return itemStack;
+    }
+
+    public ItemStack deselect() {
+        ItemStack itemStack = new ItemStack(Material.REDSTONE_TORCH);
+        Utilities.setMeta(itemStack, DisplayEntityEditor.messageManager.getString("deselect_entity_name"),
+                DisplayEntityEditor.messageManager.getList("deselect_entity_lore"),
+                "InventoryDeselect"
+        );
+        return itemStack;
+    }
 }

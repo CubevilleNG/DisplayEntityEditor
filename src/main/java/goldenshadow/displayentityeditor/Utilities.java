@@ -15,6 +15,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.List;
 
 public class Utilities {
@@ -137,31 +138,33 @@ public class Utilities {
     /**
      * Used to get the nearest display entity
      * @param location The location from where the nearest display entity should be gotten
-     * @param lockSearchToggle If this method should look for locked or unlocked entities. If true, it will only look for unlocked entities, and if false it will only look for locked ones
+     * @param secondClosest If this method should find the 2nd closest entity.
      * @return The nearest display entity or null if none were found
      */
     @Nullable
-    public static Display getNearestDisplayEntity(Location location, boolean lockSearchToggle) {
+    public static Display getNearestDisplayEntity(Location location, boolean secondClosest) {
         Display entity = null;
-        double distance = 5;
+        double distance = 25;
         assert location.getWorld() != null;
-        for (Entity e : location.getWorld().getNearbyEntities(location, 5,5,5)) {
+        Collection<Entity> entities = location.getWorld().getNearbyEntities(location, distance,distance,distance);
+        for (Entity e : entities) {
             if (e instanceof Display d) {
-                if (lockSearchToggle) {
-                    if (!d.getScoreboardTags().contains("dee:locked")) {
-                        double dis = d.getLocation().distance(location);
-                        if (dis < distance) {
-                            entity = d;
-                            distance = dis;
-                        }
-                    }
-                } else {
-                    if (d.getScoreboardTags().contains("dee:locked")) {
-                        double dis = d.getLocation().distance(location);
-                        if (dis < distance) {
-                            entity = d;
-                            distance = dis;
-                        }
+                double dis = d.getLocation().distance(location);
+                if (dis < distance) {
+                    entity = d;
+                    distance = dis;
+                }
+            }
+        }
+        if(secondClosest && entity != null) {
+            distance = 25;
+            entities.remove(entity);
+            for (Entity e : entities) {
+                if (e instanceof Display d) {
+                    double dis = d.getLocation().distance(location);
+                    if (dis < distance) {
+                        entity = d;
+                        distance = dis;
                     }
                 }
             }

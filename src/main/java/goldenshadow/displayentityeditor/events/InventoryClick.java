@@ -27,7 +27,8 @@ public class InventoryClick implements Listener {
     public void inventoryClick(InventoryClickEvent event) {
         Player player = (Player) event.getWhoClicked();
         if (player.getOpenInventory().getTitle().equals(ChatColor.translateAlternateColorCodes('&' ,DisplayEntityEditor.messageManager.getString("item_display_gui_name"))) || player.getOpenInventory().getTitle().equals(ChatColor.translateAlternateColorCodes('&' ,DisplayEntityEditor.messageManager.getString("block_display_gui_name"))) || player.getOpenInventory().getTitle().equals(ChatColor.translateAlternateColorCodes('&' ,DisplayEntityEditor.messageManager.getString("text_display_gui_name")))) {
-            Display entity = DisplayEntityEditor.currentEditMap.get(player.getUniqueId());
+            //Display entity = DisplayEntityEditor.currentEditMap.get(player.getUniqueId());
+            Display entity = DisplayEntityEditor.currentSelectionMap.get(player.getUniqueId());
             if (event.getClickedInventory() != null && !event.getClickedInventory().equals(player.getInventory())) {
                 if (event.getCurrentItem() != null && Utilities.hasDataKey(event.getCurrentItem())) {
                     event.setCancelled(true);
@@ -268,6 +269,7 @@ public class InventoryClick implements Listener {
                             case "GUIDelete" -> {
                                 if (event.isLeftClick()) {
                                     entity.remove();
+                                    DisplayEntityEditor.currentSelectionMap.remove(player.getUniqueId());
                                     player.closeInventory();
                                     player.sendMessage(Utilities.getInfoMessageFormat(DisplayEntityEditor.messageManager.getString("delete_hint")));
                                 }

@@ -17,14 +17,12 @@ import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.UUID;
 
 
 public class Command implements CommandExecutor {
 
 
-    private static final HashMap<UUID, ItemStack[]> savedInventories = new HashMap<>();
+
 
     /**
      * Used for when the deeditor command is issued
@@ -38,13 +36,20 @@ public class Command implements CommandExecutor {
     public boolean onCommand(@NotNull CommandSender sender,@NotNull org.bukkit.command.Command command,@NotNull String label, String[] args) {
         if (sender instanceof Player p) {
             if (args.length == 0) {
-                if (savedInventories.containsKey(p.getUniqueId())) {
-                    returnInventory(p);
+                if (DisplayEntityEditor.inventoryManager.getInventory(p.getUniqueId()) != null) {
+                    if (DisplayEntityEditor.inventoryManager.getInventory(p.getUniqueId()) == null) throw new RuntimeException("Return inventory didn't exist!");
+                    p.getInventory().clear();
+                    ItemStack[] saved = DisplayEntityEditor.inventoryManager.getInventory(p.getUniqueId());
+                    for (int i = 0; i < p.getInventory().getSize(); i++) {
+                        p.getInventory().setItem(i, saved[i]);
+                    }
                     p.sendMessage(Utilities.getInfoMessageFormat(DisplayEntityEditor.messageManager.getString("inventory_returned")));
-                    savedInventories.remove(p.getUniqueId());
+                    DisplayEntityEditor.inventoryManager.removeInventory(p.getUniqueId());
+                    DisplayEntityEditor.currentSelectionMap.remove(p.getUniqueId());
                     return true;
                 }
-                saveInventory(p);
+                DisplayEntityEditor.inventoryManager.addInventory(p.getUniqueId(), p.getInventory().getContents().clone());
+                p.getInventory().clear();
                 ItemStack[] array = DisplayEntityEditor.inventoryFactory.getInventoryArray(p);
                 for (int i = 0; i < array.length; i++) {
                     p.getInventory().setItem(i, array[i]);
@@ -75,11 +80,17 @@ public class Command implements CommandExecutor {
                 if (DisplayEntityEditor.alternateTextInput) {
                     if (args[0].equalsIgnoreCase("edit")) {
                         String input = collectArgsToString(args);
-                        Display display = Utilities.getNearestDisplayEntity(p.getLocation(), true);
-                        if (display == null) {
-                            p.sendMessage(Utilities.getErrorMessageFormat(DisplayEntityEditor.messageManager.getString("generic_fail")));
+                        Display display;
+                        if(DisplayEntityEditor.currentSelectionMap.containsKey(p.getUniqueId())) {
+                            display = DisplayEntityEditor.currentSelectionMap.get(p.getUniqueId());
+                        } else {
+                            p.sendMessage(Utilities.getErrorMessageFormat(DisplayEntityEditor.messageManager.getString("nothing_selected")));
                             return true;
                         }
+                        /*if (display == null) {
+                            p.sendMessage(Utilities.getErrorMessageFormat(DisplayEntityEditor.messageManager.getString("generic_fail")));
+                            return true;
+                        }*/
                         if (args[1].equalsIgnoreCase("name")) {
                             InputManager.successfulTextInput(new InputData(display, InputType.NAME, null), input, p);
                             return true;
@@ -198,28 +209,6 @@ public class Command implements CommandExecutor {
         }
         sender.sendMessage(DisplayEntityEditor.messageManager.getString("none_player_fail"));
         return true;
-    }
-
-    /**
-     * A utility method used to save a players inventory in order to be able to return it later
-     * @param player The player whose inventory should be saved
-     */
-    private static void saveInventory( Player player) {
-        savedInventories.put(player.getUniqueId(), player.getInventory().getContents().clone());
-        player.getInventory().clear();
-    }
-
-    /**
-     * A utility method used to return a players inventory
-     * @param player The player whose inventory should be returned
-     */
-    private static void returnInventory(Player player) {
-        if (!savedInventories.containsKey(player.getUniqueId())) throw new RuntimeException("Return inventory didn't exist!");
-        player.getInventory().clear();
-        ItemStack[] saved = savedInventories.get(player.getUniqueId());
-        for (int i = 0; i < player.getInventory().getSize(); i++) {
-            player.getInventory().setItem(i, saved[i]);
-        }
     }
 
     private static String collectArgsToString(String[] args) {

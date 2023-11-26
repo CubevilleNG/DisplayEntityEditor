@@ -164,6 +164,8 @@ public class InventoryFactory {
         array[4] = inventoryItems.moveY(p);
         array[5] = inventoryItems.moveZ(p);
         array[6] = inventoryItems.toolPrecision();
+        array[7] = inventoryItems.select();
+        array[8] = inventoryItems.deselect();
 
         array[27] = inventoryItems.spawnItemDisplay();
         array[28] = inventoryItems.spawnBlockDisplay();

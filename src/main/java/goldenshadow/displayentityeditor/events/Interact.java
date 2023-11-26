@@ -17,6 +17,7 @@ import org.bukkit.util.Transformation;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
+import java.util.UUID;
 
 public class Interact implements Listener {
 
@@ -47,26 +48,36 @@ public class Interact implements Listener {
                     String toolValue = Utilities.getToolValue(item);
                     if (toolValue != null) {
                         if (toolValue.equals("InventorySpawnItem")) {
-                            spawnDisplayEntity(player.getLocation(), EntityType.ITEM_DISPLAY);
+                            spawnDisplayEntity(player.getLocation(), EntityType.ITEM_DISPLAY, player.getUniqueId());
                             player.sendMessage(Utilities.getInfoMessageFormat(DisplayEntityEditor.messageManager.getString("item_display_spawned")));
                             return;
                         }
                         if (toolValue.equals("InventorySpawnBlock")) {
-                            spawnDisplayEntity(player.getLocation(), EntityType.BLOCK_DISPLAY);
+                            spawnDisplayEntity(player.getLocation(), EntityType.BLOCK_DISPLAY, player.getUniqueId());
                             player.sendMessage(Utilities.getInfoMessageFormat(DisplayEntityEditor.messageManager.getString("block_display_spawned")));
                             return;
                         }
                         if (toolValue.equals("InventorySpawnText")) {
-                            spawnDisplayEntity(player.getLocation(), EntityType.TEXT_DISPLAY);
+                            spawnDisplayEntity(player.getLocation(), EntityType.TEXT_DISPLAY, player.getUniqueId());
                             player.sendMessage(Utilities.getInfoMessageFormat(DisplayEntityEditor.messageManager.getString("text_display_spawned")));
                             return;
                         }
                         if (toolValue.equals("InventoryUnlock")) {
-                            Display display = Utilities.getNearestDisplayEntity(player.getLocation(), false);
-                            if (display == null) {
-                                player.sendMessage(Utilities.getErrorMessageFormat(DisplayEntityEditor.messageManager.getString("unlock_fail")));
+                            Display display;
+                            if(DisplayEntityEditor.currentSelectionMap.containsKey(player.getUniqueId())) {
+                                display = DisplayEntityEditor.currentSelectionMap.get(player.getUniqueId());
+                            } else {
+                                player.sendMessage(Utilities.getErrorMessageFormat(DisplayEntityEditor.messageManager.getString("nothing_selected")));
                                 return;
                             }
+                            if(!display.getScoreboardTags().contains("dee:locked")) {
+                                player.sendMessage(Utilities.getErrorMessageFormat(DisplayEntityEditor.messageManager.getString("selected_unlock_fail")));
+                                return;
+                            }
+                            /*if (display == null) {
+                                player.sendMessage(Utilities.getErrorMessageFormat(DisplayEntityEditor.messageManager.getString("unlock_fail")));
+                                return;
+                            }*/
                             display.getScoreboardTags().remove("dee:locked");
                             highlightEntity(display);
                             player.sendMessage(Utilities.getInfoMessageFormat(DisplayEntityEditor.messageManager.getString("unlock_success")));
@@ -93,20 +104,77 @@ public class Interact implements Listener {
                             sendActionbarMessage(player, DisplayEntityEditor.messageManager.getString("tool_precision").formatted(df.format(d)));
                             return;
                         }
+                        if (toolValue.equals("InventoryDeselect")) {
+                            if (!DisplayEntityEditor.currentSelectionMap.containsKey(player.getUniqueId())) {
+                                player.sendMessage(Utilities.getErrorMessageFormat(DisplayEntityEditor.messageManager.getString("deselect_fail")));
+                                return;
+                            }
 
-                        Display display = Utilities.getNearestDisplayEntity(player.getLocation(), true);
-                        if (display == null) {
-                            player.sendMessage(Utilities.getErrorMessageFormat(DisplayEntityEditor.messageManager.getString("generic_fail")));
+                            DisplayEntityEditor.currentSelectionMap.remove(player.getUniqueId());
+                            player.sendMessage(Utilities.getInfoMessageFormat(DisplayEntityEditor.messageManager.getString("deselect_success")));
                             return;
                         }
+
+                        Display display;
+                        if(toolValue.equals("InventorySelect")) {
+                            display = Utilities.getNearestDisplayEntity(player.getLocation(), player.isSneaking());
+                        } else if(DisplayEntityEditor.currentSelectionMap.containsKey(player.getUniqueId())) {
+                            display = DisplayEntityEditor.currentSelectionMap.get(player.getUniqueId());
+                        } else {
+                            player.sendMessage(Utilities.getErrorMessageFormat(DisplayEntityEditor.messageManager.getString("nothing_selected")));
+                            return;
+                        }
+                        /*if (display == null) {
+                            player.sendMessage(Utilities.getErrorMessageFormat(DisplayEntityEditor.messageManager.getString("generic_fail")));
+                            return;
+                        }*/
                         switch (toolValue) {
+                            case "InventorySelect" -> {
+
+                                if (DisplayEntityEditor.currentSelectionMap.containsValue(display)) {
+                                    if (DisplayEntityEditor.currentSelectionMap.containsKey(player.getUniqueId()) &&
+                                            DisplayEntityEditor.currentSelectionMap.get(player.getUniqueId()).equals(display)) {
+                                        player.sendMessage(Utilities.getErrorMessageFormat(DisplayEntityEditor.messageManager.getString("select_fail_identical_selection")));
+                                    } else {
+                                        player.sendMessage(Utilities.getErrorMessageFormat(DisplayEntityEditor.messageManager.getString("select_fail_someone")));
+                                    }
+                                    return;
+                                }
+
+                                DisplayEntityEditor.currentSelectionMap.put(player.getUniqueId(), display);
+                                player.sendMessage(Utilities.getInfoMessageFormat(DisplayEntityEditor.messageManager.getString("select_success")));
+                                if (display instanceof TextDisplay) {
+                                    String defText = ((TextDisplay) display).getText();
+                                    String noColorText = ChatColor.stripColor(defText);
+                                    ((TextDisplay) display).setText(ChatColor.BLACK + noColorText);
+                                    DisplayEntityEditor.getPlugin().getServer().getScheduler().runTaskLater(DisplayEntityEditor.getPlugin(), () -> {
+                                        ((TextDisplay) display).setText(ChatColor.WHITE + noColorText);
+                                    }, 10);
+                                    DisplayEntityEditor.getPlugin().getServer().getScheduler().runTaskLater(DisplayEntityEditor.getPlugin(), () -> {
+                                        ((TextDisplay) display).setText(ChatColor.BLACK + noColorText);
+                                    }, 20);
+                                    DisplayEntityEditor.getPlugin().getServer().getScheduler().runTaskLater(DisplayEntityEditor.getPlugin(), () -> {
+                                        ((TextDisplay) display).setText(ChatColor.WHITE + noColorText);
+                                    }, 30);
+                                    DisplayEntityEditor.getPlugin().getServer().getScheduler().runTaskLater(DisplayEntityEditor.getPlugin(), () -> {
+                                        ((TextDisplay) display).setText(defText);
+                                    }, 40);
+                                } else {
+                                    boolean defGlow = display.isGlowing();
+                                    display.setGlowing(!defGlow);
+                                    DisplayEntityEditor.getPlugin().getServer().getScheduler().runTaskLater(DisplayEntityEditor.getPlugin(), () -> {
+                                        display.setGlowing(defGlow);
+                                    }, 40);
+                                }
+                                return;
+                            }
                             case "InventoryGUI" -> {
 
-                                if (DisplayEntityEditor.currentEditMap.containsValue(display)) {
+                                /*if (DisplayEntityEditor.currentEditMap.containsValue(display)) {
                                     player.sendMessage(Utilities.getErrorMessageFormat(DisplayEntityEditor.messageManager.getString("gui_open_fail")));
                                     return;
                                 }
-                                DisplayEntityEditor.currentEditMap.put(player.getUniqueId(), display);
+                                DisplayEntityEditor.currentEditMap.put(player.getUniqueId(), display);*/
 
                                 if (display instanceof ItemDisplay) {
                                     player.openInventory(DisplayEntityEditor.inventoryFactory.createItemDisplayGUI((ItemDisplay) display));
@@ -324,6 +392,7 @@ public class Interact implements Listener {
                             }
                             case "InventoryClone" -> {
                                 Display clone = (Display) display.getWorld().spawnEntity(display.getLocation(), display.getType(), false);
+                                DisplayEntityEditor.currentSelectionMap.put(player.getUniqueId(), clone);
                                 cloneEntity(clone, display);
                                 sendActionbarMessage(player, DisplayEntityEditor.messageManager.getString("clone"));
                             }
@@ -361,7 +430,7 @@ public class Interact implements Listener {
      * @param location The location of where it should be spawned
      * @param type The specific type of display entity
      */
-    private static void spawnDisplayEntity(Location location, EntityType type) {
+    private static void spawnDisplayEntity(Location location, EntityType type, UUID player) {
         assert location.getWorld() != null;
         location.setYaw(0);
         location.setPitch(0);
@@ -371,6 +440,7 @@ public class Interact implements Listener {
         }
         if (location.getY() < 0) location.setY(location.getY() + 0.0001);
         Display d = (Display) location.getWorld().spawnEntity(location, type, false);
+        DisplayEntityEditor.currentSelectionMap.put(player, d);
         d.setVisualFire(true);
 
         if (d instanceof ItemDisplay) {

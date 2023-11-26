@@ -2,11 +2,9 @@ package goldenshadow.displayentityeditor;
 
 import goldenshadow.displayentityeditor.commands.Command;
 import goldenshadow.displayentityeditor.commands.TabComplete;
-import goldenshadow.displayentityeditor.events.Interact;
-import goldenshadow.displayentityeditor.events.InventoryClick;
-import goldenshadow.displayentityeditor.events.InventoryClose;
-import goldenshadow.displayentityeditor.events.PlayerJoin;
+import goldenshadow.displayentityeditor.events.*;
 import goldenshadow.displayentityeditor.inventories.InventoryFactory;
+import goldenshadow.displayentityeditor.inventories.InventoryManager;
 import goldenshadow.displayentityeditor.items.GUIItems;
 import goldenshadow.displayentityeditor.items.InventoryItems;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -31,7 +29,9 @@ public final class DisplayEntityEditor extends JavaPlugin {
     private static DisplayEntityEditor plugin;
     public static ConversationFactory conversationFactory;
     public static InventoryFactory inventoryFactory;
-    public static HashMap<UUID, Display> currentEditMap = new HashMap<>();
+    //public static HashMap<UUID, Display> currentEditMap = new HashMap<>();
+    public static HashMap<UUID, Display> currentSelectionMap = new HashMap<>();
+    public static Set<UUID> needInvReturned = new HashSet<>();
     public static NamespacedKey toolPrecisionKey;
     public static boolean alternateTextInput = false;
     public static boolean useMiniMessageFormat = false;
@@ -51,6 +51,7 @@ public final class DisplayEntityEditor extends JavaPlugin {
             )
             .build();
     public static MessageManager messageManager;
+    public static InventoryManager inventoryManager;
 
     /**
      * Used for when the plugin starts up
@@ -69,6 +70,7 @@ public final class DisplayEntityEditor extends JavaPlugin {
         } catch (IOException e) {
             plugin.getLogger().severe("Failed to load messages.yml!");
         }
+        checkForInventoriesFolder();
 
         conversationFactory = new ConversationFactory(plugin);
         inventoryFactory = new InventoryFactory(new GUIItems(), new InventoryItems());
@@ -78,6 +80,9 @@ public final class DisplayEntityEditor extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new InventoryClick(), plugin);
         Bukkit.getPluginManager().registerEvents(new InventoryClose(), plugin);
         Bukkit.getPluginManager().registerEvents(new PlayerJoin(), plugin);
+        Bukkit.getPluginManager().registerEvents(new PlayerQuit(), plugin);
+        Bukkit.getPluginManager().registerEvents(new PlayerChangedWorld(), plugin);
+        Bukkit.getPluginManager().registerEvents(new PlayerMove(), plugin);
         toolPrecisionKey = new NamespacedKey(plugin, "toolPrecision");
 
         new Metrics(plugin, 18672);
@@ -124,5 +129,15 @@ public final class DisplayEntityEditor extends JavaPlugin {
             Files.copy(ip, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
         messageManager = new MessageManager();
+    }
+
+    public static void checkForInventoriesFolder() {
+        File dataDir = getPlugin().getDataFolder();
+        File inventoriesDir = new File(dataDir, "inventories");
+        if(!inventoriesDir.exists()) {
+            plugin.getLogger().info("Unable to find inventories folder - generating new one!");
+            inventoriesDir.mkdirs();
+        }
+        inventoryManager = new InventoryManager(inventoriesDir);
     }
 }

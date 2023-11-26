@@ -18,8 +18,12 @@ command_message: "&3[DEE] &bRun command &7\"/deeditor %s\"&b to edit the entity 
 
 
 # Inventory Items
+select_entity_name: "&eSelect Entity"
+deselect_entity_name: "&eDeselect Entity"
 open_gui_name: "&eOpen GUI"
 open_gui_lore: ["&7Click to open the GUI of the", "&7nearest unlocked display entity", " ", "&e&lRIGHT-CLICK&r&e to open"]
+select_entity_lore: ["&7Click to select the nearest", "&7unlocked display entity", "&7within 25 blocks", " ", "&e&lRIGHT-CLICK&r&e to select the nearest", "&e&lSHIFT RIGHT-CLICK &r&eto select the 2nd nearest"]
+deselect_entity_lore: ["&7Click to deselect your entity", "&e&lRIGHT-CLICK&r&e to deselect"]
 rotate_yaw_name: "&eRotate Horizontally (yaw)"
 rotate_pitch_name: "&eRotate Vertically (pitch)"
 rotate_lore: ["&7Click to rotate the nearest", "&7unlocked display entity", " ", "&e&lRIGHT-CLICK&r&e to rotate by +%s", "&e&lSHIFT RIGHT-CLICK &r&eto rotate by -%s"]
@@ -139,14 +143,22 @@ text_append_hint: "Please enter the text in chat that should be appended! You ca
 block_invalid_hint: "Invalid block! The item must be a block item!"
 
 #Tool feedback
-generic_fail: "There is no unlocked display entity within 5 blocks!"
+generic_fail: "There is no unlocked display entity within 25 blocks!"
 item_display_spawned: "Spawned new item display entity!"
 block_display_spawned: "Spawned new block display entity!"
 text_display_spawned: "Spawned new text display entity!"
-unlock_fail: "There is no locked display entity within 5 blocks!"
+unlock_fail: "There is no locked display entity within 25 blocks!"
+selected_unlock_fail: "Your selected entity is not locked!"
 unlock_success: "Display entity unlocked!"
 tool_precision: "Tool Precision: %s"
 gui_open_fail: "Someone else is editing this entity at the moment!"
+select_success: "Entity selected!"
+select_fail_you: "You already have an entity selected!"
+select_fail_identical_selection: "You already have this entity selected!"
+select_fail_someone: "Someone else already has this entity selected!"
+deselect_success: "Entity deselected!"
+deselect_fail: "You have no entities selected!"
+nothing_selected: "You have no entities selected!"
 yaw: "Yaw: %s"
 pitch: "Pitch: %s"
 move_x: "X: %s"
